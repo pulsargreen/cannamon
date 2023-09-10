@@ -1,0 +1,3 @@
+venv/
+src/.esphome/
+src/secrets.yaml

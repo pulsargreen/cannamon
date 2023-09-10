@@ -1,0 +1,80 @@
+# CORE CONFIGURATION
+# ==================
+esphome:
+  name: cannamon_tent
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# This is ESPHome API, also used by HomeAssistant. Although we do not use HA, API is needed to get
+# logs over the air without MQTT. Once MQTT is working, we no longer need it as logs are pushed to
+# MQTT as well. It's ok to leave it enabled. It's useful when MQTT is down and you need to get logs
+# from the device.
+api:
+  password: ""
+
+ota:
+  password: ""
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # NOTE: change this address after it first connected to your wifi network. Your network writes a
+  # DHCP lease file and every time the device connects, it will get the same ip. This configuration
+  # is when you push OTA update.
+  #
+  # If mDNS is working, it should resolve with cannamon_tent.local but I do not use my router's DNS
+  # server so I prefer to go static.
+
+  #use_address: 192.168.x.x
+
+# SHT31 is I2C chip so we need to tell the device where SDA and SCL connected. Those are the pins on
+# the device and it may change between 8266 and 32. This is how I connected on NodeMCU v3.
+i2c:
+  sda: D2
+  scl: D1
+  scan: true
+
+# SENSORS
+# =======
+sensor:
+  - platform: sht3xd
+    temperature:
+      name: "temperature"
+    humidity:
+      name: "humidity"
+    address: 0x44
+    update_interval: 15s
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+
+mqtt:
+  broker: !secret mqtt_ip
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+
+status_led:
+  id: internal_led
+  pin:
+    number: GPIO2
+    inverted: true
